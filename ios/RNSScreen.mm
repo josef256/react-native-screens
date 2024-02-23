@@ -69,7 +69,18 @@ namespace react = facebook::react;
     _bridge = bridge;
     [self initCommonProps];
   }
+#if TARGET_OS_TV
+    _tvRemoteHandler = [[RCTTVRemoteHandler alloc] initWithView:self];
 
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(enableTVMenuKey)
+                                                 name:RCTTVEnableMenuKeyNotification
+                                               object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(disableTVMenuKey)
+                                                 name:RCTTVDisableMenuKeyNotification
+                                               object:nil];
+#endif // TARGET_OS_TV
   return self;
 }
 
@@ -559,6 +570,26 @@ namespace react = facebook::react;
     [_reactSuperview performSelector:@selector(presentationControllerDidDismiss:) withObject:presentationController];
   }
 }
+
+#if TARGET_OS_TV
+
+- (void)enableTVMenuKey {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (![[self gestureRecognizers] containsObject:_tvRemoteHandler.tvMenuKeyRecognizer]) {
+            [self addGestureRecognizer:_tvRemoteHandler.tvMenuKeyRecognizer];
+        }
+    });
+}
+
+- (void)disableTVMenuKey {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if ([[self gestureRecognizers] containsObject:_tvRemoteHandler.tvMenuKeyRecognizer]) {
+            [self removeGestureRecognizer:_tvRemoteHandler.tvMenuKeyRecognizer];
+        }
+    });
+}
+
+#endif // TARGET_OS_TV
 
 - (nullable RNSScreenStackHeaderConfig *)findHeaderConfig
 {
